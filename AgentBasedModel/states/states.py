@@ -3,6 +3,7 @@ import AgentBasedModel.utils.math as math
 
 from scipy.stats import kendalltau, chi2
 import statsmodels.api as sm
+from typing import List
 
 
 def aggToShock(sim: Simulator, window: int, funcs: list) -> dict:
@@ -33,8 +34,7 @@ def test_trend_kendall(values, category: bool = False, conf: float = .95) -> boo
     """
     iterations = range(len(values))
     tau, p_value = kendalltau(iterations, values)
-    
-    
+
     if category:
         return p_value < (1 - conf)
     return {'tau': round(tau, 4), 'p-value': round(p_value, 4)}
@@ -129,7 +129,8 @@ def general_states(info: SimulatorInfo, size: int = 10, window: int = 5) -> str 
             res.append('stable')
     return res
 
-def status(info: SimulatorInfo, size: int = None, window: int = 5, shock: int = 0) -> str or list[str]:
+
+def status(info: SimulatorInfo, size: int = None, window: int = 5, shock: int = 0) -> str or List[str]:
     volatility = info.price_volatility(window)
     price = info.prices[window:]
     if size is None:

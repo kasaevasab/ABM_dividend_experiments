@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 def plot_price(info: SimulatorInfo, spread=False, rolling: int = 1, figsize=(6, 6)):
     plt.figure(figsize=figsize)
-    plt.title(f'Stock Price {info.exchange.id()}') if rolling == 1 else plt.title(
+    plt.title(f'Stock Price with {info.exchange.dividend_generation_mode} dividend generation') if rolling == 1 else plt.title(
         f'Stock Price {info.exchange.id()} (MA {rolling})')
     plt.xlabel('Iterations')
     plt.ylabel('Price')
@@ -22,7 +22,7 @@ def plot_price_fundamental(info: SimulatorInfo, spread=False, access: int = 1, r
                            figsize=(6, 6)):
     plt.figure(figsize=figsize)
     if rolling == 1:
-        plt.title(f'Stock {info.exchange.id()} Fundamental and Market value')
+        plt.title(f'Stock {info.exchange.id()} Fundamental and Market value with {info.exchange.dividend_generation_mode} distirbution')
     else:
         plt.title(f'Stock {info.exchange.id()} Fundamental and Market value (MA {rolling})')
     plt.xlabel('Iterations')
@@ -62,7 +62,7 @@ def plot_arbitrage(info: SimulatorInfo, access: int = 1, rolling: int = 1, figsi
 
 def plot_dividend(info: SimulatorInfo, rolling: int = 1, figsize=(6, 6)):
     plt.figure(figsize=figsize)
-    plt.title(f'Stock {info.exchange.id()} Dividend') if rolling == 1 else plt.title(
+    plt.title(f'Stock {info.exchange.id()} Dividend with {info.exchange.dividend_generation_mode} distirbution') if rolling == 1 else plt.title(
         f'Stock {info.exchange.id()} Dividend (MA {rolling})')
     plt.xlabel('Iterations')
     plt.ylabel('Dividend')

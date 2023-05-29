@@ -8,6 +8,8 @@ from abc import abstractmethod
 from queue import Queue
 from AgentBasedModel.news.news import News, CategoricalNews, NumericalNews
 from math import log
+import numpy as np
+from scipy.stats import uniform, expon, gamma, levy_stable
 
 
 class Broker:
@@ -100,7 +102,8 @@ class ExchangeAgent(Broker):
     global_id = 0
 
     def __init__(self, price: float or int = 100, std: float or int = 25, volume: int = 1000, rf: float = 5e-4,
-                 transaction_cost: float = 0):
+                 transaction_cost: float = 0, dividend_generation_mode: str = 'lognormal',
+                 dividend_generation_args: List[float] = [5e-3]):
         self._id = ExchangeAgent.global_id
         self._iteration = 0
         self.name = f'ExchangeAgent{self.id}'
@@ -110,16 +113,18 @@ class ExchangeAgent(Broker):
         self.dividend_book = list()  # act like queue
         self._risk_free = rf
         self._transaction_cost = transaction_cost
+        self.dividend_generation_mode = dividend_generation_mode
+        self.dividend_generation_args = dividend_generation_args
         self._fill_book(price, std, volume, rf * price)  # initialise both order book and dividend book
         logging.Logger.info(f"{self.name}")
 
     def generate_dividend(self):
         # Generate future dividend
-        d = self.dividend_book[-1] * self._next_dividend()
+        d = self._next_dividend(self.dividend_book[-1], args=self.dividend_generation_args)
         self.dividend_book.append(max(d, 0))  # dividend > 0
         self.dividend_book.pop(0)
 
-    def _fill_book(self, price, std, volume, div: float = 0.05):
+    def _fill_book(self, price, std, volume, div: float = 2):
         """
         Fill order book with random orders and fill dividend book with future dividends.
 
@@ -145,7 +150,7 @@ class ExchangeAgent(Broker):
         # Dividend book
         for i in range(100):
             self.dividend_book.append(max(div, 0))  # dividend > 0
-            div *= self._next_dividend()
+            div = self._next_dividend(div, args=self.dividend_generation_args)
 
     def _clear_book(self):
         """
@@ -176,10 +181,25 @@ class ExchangeAgent(Broker):
             return self.dividend_book[0]
         return self.dividend_book[:access]
 
-    @classmethod
-    def _next_dividend(cls, div_func=exp, std=5e-3):
-        # return random.normalvariate(0, 1)
-        return div_func(random.normalvariate(0, std))
+    def _next_dividend(self, prev_dividend: float, args: List[float]):
+        if self.dividend_generation_mode == 'lognormal':
+            return max(0, prev_dividend * exp(random.normalvariate(0, args[0])))
+        elif self.dividend_generation_mode == 'uniform':
+            d = max(0, prev_dividend * uniform.rvs(loc=args[0], scale=(args[1] - args[0])))
+            print(d)
+            return d
+        elif self.dividend_generation_mode == 'expon':
+            d =  max(0, expon.rvs(scale=(1/args[0])))
+            print(d)
+            return d
+        elif self.dividend_generation_mode == 'gamma':
+            return max(0, gamma.rvs(a=args[0], scale=args[1]))
+        elif self.dividend_generation_mode == 'levy':
+            return max(0, levy_stable.rvs(1, 1, loc=args[0], scale=args[1]))
+        else:
+            logging.Logger.info(
+                f"There is no {self.dividend_generation_mode} distribution provided in the model")
+            quit()
 
     def limit_order(self, order: Order):
         bid, ask = self.spread().values()
@@ -1031,7 +1051,7 @@ class AnchoringTrader(Chartist):
     def __init__(self, markets: List[Broker], cash: float or int, assets: List[int] = None,
                  discount_factor: float = 0.06, belief_weight: float = 0.1, shock_indicator: float = 10,
                  strategy_change_factor: float = 0.06,
-    ):
+                 ):
         """
         :param markets: exchange agent link
         :param cash: number of cash

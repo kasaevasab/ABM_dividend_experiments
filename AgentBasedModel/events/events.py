@@ -63,7 +63,7 @@ class FundamentalPriceShock(Event):
             return
 
         divs = self.simulator.exchanges[self.stock_id].dividend_book  # link to dividend book
-        r = self.simulator.exchanges[self.stock_id].risk_free  # risk-free rate
+        r = self.simulator.exchanges[self.stock_id].risk_free()  # risk-free rate
 
         self.simulator.exchanges[self.stock_id].dividend_book = [div + self.dp * r for div in divs]
 
